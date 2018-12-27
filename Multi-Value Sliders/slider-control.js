@@ -29,7 +29,9 @@ function setSliderColors(sliderIndex, enabled) {
   var propertyValues = [
     ['textcolor', [1, 1, 1]],
     ['slidercolor', [0, 1, 0]],
-    ['tribordercolor', [1, 0, 0]],
+    ['tribordercolor', [0.65, 0.65, 0.65]],
+    ['tricolor', [.314, .314, .314]],
+    ['trioncolor', [1, 1, 1]],
   ];
   for(var i=0; i < propertyValues.length; i++) {
     // post('prop name: ' + propertyValues[i][0] + '\n');
