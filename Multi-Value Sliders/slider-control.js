@@ -1,17 +1,18 @@
 autowatch = 1
-outlets = 1;
+outlets = 2;
+var totalSliderCount = 10;
+
+setoutletassist (0, 'all value messages\nsend these directly to the live.slider objects');
+setoutletassist (1, 'all attribute-related messages\nsend these to the attrUI objects connected to each live.slider');
 
 function setSliderCount(activeSliderCount) {
-  setPropertiesForAllSliders(10, activeSliderCount);
-  // if(numberOfSliders === 0) {
-  //   // outlet(0, 'attr textcolor, 0 0 0 1., attr slidercolor, 0 0 0 1., attr tribordercolor, 0.314 0.314 0.314 1, attr trioncolor, 0 0 0 1, attr tricolor, 0.65 0.65 0.65 1');
-  //   // outlet(0, ["attr", "fontface"]); //, "0 0 0 1.0"');
-  //   setSliderColors(false)
-  // } else {
-  //   // outlet(0, 'attr textcolor, 0 0 0 0.25, attr slidercolor, 0 0 0 0.25, attr tribordercolor, 0.314 0.314 0.314 0.25, attr trioncolor, 0 0 0 0.25, attr tricolor, 0.65 0.65 0.65 0.25');
-  //   // outlet(0, ["attr", "slidercolor"]); //, "0 0 0 0.25"');
-  //   setSliderColors(true)
-  // }
+  setPropertiesForAllSliders(totalSliderCount, activeSliderCount);
+}
+
+function setSliderRanges(newMax, newMin) {
+  for(var i=0; i < totalSliderCount; i++) {
+    outlet(0, [i, '_parameter_range', newMax, newMin]);
+  }
 }
 
 function setPropertiesForAllSliders(numberOfSliders, activeSliderCount) {
@@ -35,7 +36,7 @@ function setSliderColors(sliderIndex, enabled) {
   ];
   for(var i=0; i < propertyValues.length; i++) {
     // post('prop name: ' + propertyValues[i][0] + '\n');
-    outlet(0, [sliderIndex, 'attr', propertyValues[i][0]]);
-    outlet(0, [sliderIndex, propertyValues[i][1][0], propertyValues[i][1][1], propertyValues[i][1][2], opacity])
+    outlet(1, [sliderIndex, 'attr', propertyValues[i][0]]);
+    outlet(1, [sliderIndex, propertyValues[i][1][0], propertyValues[i][1][1], propertyValues[i][1][2], opacity])
   };
 }
