@@ -5,6 +5,7 @@ var activeSliders = 10;
 var persistedValues = {
   minimumValue: 0, // default, should be reset by patcher on load
   maximumValue: 100, // default, should be reset by patcher on load
+  maximumTotal: 100, // default, should be reset by patcher on load
   sliderValues: []};
   for(var i=0; i < 10; i++) {
     persistedValues.sliderValues[i] = 0;
@@ -26,9 +27,10 @@ function setSliderCount(activeSliderCount) {
   setPropertiesForAllSliders(totalSliderCount, activeSliderCount);
 }
 
-function setSliderRanges(newMax, newMin) {
+function setSliderRanges(newMax, newMin, newMaxTotal) {
   persistedValues.minimumValue = newMin;
   persistedValues.maximumValue = newMax;
+  persistedValues.maximumTotal = newMaxTotal;
   post('state', 'setting new range: ' + persistedValues.minimumValue + ', ' + persistedValues.maximumValue, '\n');
   for(var i=0; i < totalSliderCount; i++) {
     outlet(0, [i, '_parameter_range', newMax, newMin]);
@@ -40,7 +42,11 @@ function setPropertiesForAllSliders(numberOfSliders, activeSliderCount) {
     setSliderColors(i, activeSliderCount > i);
     outlet(1, [i, 'attr', 'ignoreclick']);
     outlet(1, [i, activeSliderCount > i ? 0 : 1]);
+    if(i >= activeSliderCount) {
+      persistedValues.sliderValues[i] = 0;
+    }
   }
+  resendSliderValues();
 }
 
 function setSliderColors(sliderIndex, enabled) {
@@ -64,11 +70,29 @@ function setSliderColors(sliderIndex, enabled) {
 }
 
 function distributeSliderValueChange(changedIndex, newValue) {
+  const maxTotalScaled = persistedValues.maximumTotal / persistedValues.maximumValue;
+  post('maxTotalScaled=' + maxTotalScaled + '\n');
+  const delta = newValue - persistedValues.sliderValues[changedIndex];
   persistedValues.sliderValues[changedIndex] = newValue;
+  var totalValue = sumArray(persistedValues.sliderValues.slice(0, activeSliders));
+  if(totalValue <= maxTotalScaled || delta <= 0) {
+    post('' + totalValue + ' / ' + maxTotalScaled + '\n');
+    post('will do nothing\n');
+  } else {
+    const totalRemainder = roundSliderValue(totalValue - persistedValues.sliderValues[changedIndex]);
+    post('totalRemainder=' + totalRemainder + '\n');
+    for(var i=0; i < persistedValues.sliderValues.length; i++) {
+      if(i !== changedIndex) {
+        var adjustedVal = roundSliderValue(persistedValues.sliderValues[i] - delta * persistedValues.sliderValues[i] / totalRemainder);
+        post(persistedValues.sliderValues[i] + ' => ' + adjustedVal + '\n');
+        persistedValues.sliderValues[i] = adjustedVal;
+      }
+    }
+  } 
 }
 
 function sliderValueChanged(sliderIndex, newValue) {
-  post('slider ' + sliderIndex + ' changed to ' + newValue + '\n');
+  // post('slider ' + sliderIndex + ' changed to ' + newValue + '\n');
   const roundedValue = roundSliderValue(newValue);
   if(roundedValue !== persistedValues.sliderValues[sliderIndex]) {
   //   post('will record slider ' + sliderIndex + ' value as ' + roundedValue + '\n');
@@ -85,12 +109,20 @@ function setSliderValue(sliderIndex, newValue) {
 
 function resendSliderValues() {
   for(var i = 0; i < persistedValues.sliderValues.length; i++) {
-    post(i + '\n');
     outlet(0, [i, 'set', persistedValues.minimumValue + persistedValues.sliderValues[i] * persistedValues.maximumValue]);
   }
+  outlet(0, [-1, 'setTotal', sumArray(persistedValues.sliderValues) * persistedValues.maximumValue]);
 }
 
 function roundSliderValue(value) {
   const roundingFactor = Math.pow(10, valuePrecision);
   return Math.round(value * roundingFactor) / roundingFactor;
+}
+
+function sumArray(arr) {
+  const sum = arr.reduce(function(sum, entry) {
+    return sum + entry;
+  }, 0);
+  post('sum=' + sum + '\n')
+  return sum;
 }
